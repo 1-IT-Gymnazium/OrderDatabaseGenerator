@@ -1,4 +1,4 @@
-(1,CreditCard),
-(2,PayPal),
-(3,BankTransfer),
-(4,Cashon Delivery)
+1,CreditCard
+2,PayPal
+3,BankTransfer
+4,Cashon Delivery
