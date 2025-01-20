@@ -1,3 +1,5 @@
+using System;
+
 namespace OrderDatabaseGenerator;
 public class GeneratorApp
 {
@@ -7,9 +9,20 @@ public class GeneratorApp
     private readonly List<User> emplyees;
     private readonly List<PaymentType> payments;
     private readonly List<DeliveryType> deliveries;
+    private Random random = new Random();
+    private DateTime startDate = new DateTime(2018, 1, 1);
+
+    public string RandomDate(int range)
+    {
+        DateTime newDate = startDate;
+        string date = newDate.AddDays(random.Next(range)).ToString("yyyy-MM-dd");
+        return date;
+    }
 
     public GeneratorApp()
     {
+        int range = (DateTime.Today - startDate).Days;
+
         products = File.ReadAllLines("product.data")
             .AdvSelect()
             .Select(x =>
@@ -45,7 +58,7 @@ public class GeneratorApp
                 Role: x[6],
                 Sex: x[7],
                 BranchId: x[8].Trim() != "null" ? int.Parse(x[8]) : null,
-                CreatedDate: x[9]))
+                CreatedDate: RandomDate(range)))
             .ToList();
 
         emplyees = users.Where(x => x.Role == "2").ToList();
