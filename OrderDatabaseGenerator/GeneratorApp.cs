@@ -1,28 +1,25 @@
 using System;
-
 namespace OrderDatabaseGenerator;
 public class GeneratorApp
 {
     private readonly List<Product> products;
     private readonly List<Branch> branches;
     private readonly List<User> customers;
-    private readonly List<User> emplyees;
+    private readonly List<User> employees;
     private readonly List<PaymentType> payments;
     private readonly List<DeliveryType> deliveries;
     private Random random = new Random();
     private DateTime startDate = new DateTime(2018, 1, 1);
 
-    public string RandomDate(int range)
+    public string RandomDate(DateTime start, DateTime end)
     {
-        DateTime newDate = startDate;
-        string date = newDate.AddDays(random.Next(range)).ToString("yyyy-MM-dd");
-        return date;
+        int range = (end - start).Days;
+        DateTime randomDate = start.AddDays(random.Next(range));
+        return randomDate.ToString("yyyy-MM-dd");
     }
 
     public GeneratorApp()
     {
-        int range = (DateTime.Today - startDate).Days;
-
         products = File.ReadAllLines("product.data")
             .AdvSelect()
             .Select(x =>
@@ -58,10 +55,10 @@ public class GeneratorApp
                 Role: x[6],
                 Sex: x[7],
                 BranchId: x[8].Trim() != "null" ? int.Parse(x[8]) : null,
-                CreatedDate: RandomDate(range)))
+                CreatedDate: RandomDate(new DateTime(2018, 1, 1), new DateTime(2025, 1, 1)))) // Oprava volání RandomDate
             .ToList();
 
-        emplyees = users.Where(x => x.Role == "2").ToList();
+        employees = users.Where(x => x.Role == "2").ToList();
         customers = users.Where(x => x.Role == "1").ToList();
 
         payments = File.ReadAllLines("payment.data")
@@ -125,7 +122,7 @@ public class GeneratorApp
                     ));
             }
 
-            var empl = emplyees[r.Next(0, emplyees.Count)];
+            var empl = employees[r.Next(0, employees.Count)];
             var item = new Order(
                 i,
                 customers[r.Next(0, customers.Count)].Id,
@@ -139,11 +136,6 @@ public class GeneratorApp
                 );
 
             orders.Add(item);
-            //Console.WriteLine(item);
-            foreach (var bž in orderProducts.Where(x => x.OrderId == i))
-            {
-                //Console.WriteLine("\t" + bž);
-            }
         }
     }
 }
@@ -152,6 +144,5 @@ public static class Extensions
 {
     public static IEnumerable<string[]> AdvSelect(this string[] query)
         => query
-        .Select(x => x.TrimStart('(').TrimEnd([')', ',']).Split(','))
-        ;
+        .Select(x => x.TrimStart('(').TrimEnd([')', ',']).Split(','));
 }
