@@ -11,13 +11,6 @@ public class GeneratorApp
     private Random random = new Random();
     private DateTime startDate = new DateTime(2018, 1, 1);
 
-    public string RandomDate(DateTime start, DateTime end)
-    {
-        int range = (end - start).Days;
-        DateTime randomDate = start.AddDays(random.Next(range));
-        return randomDate.ToString("yyyy-MM-dd");
-    }
-
     public GeneratorApp()
     {
         var baseDate = new DateTime(2018, 1, 1); // Nejstarší datum
@@ -49,7 +42,6 @@ public class GeneratorApp
             .AdvSelect()
             .Select((x, index) =>
             {
-                // Náhodný rozestup v rozmezí 0 až 90 dnů
                 var randomDays = random.Next(1, 90);
                 baseDate = baseDate.AddDays(randomDays); // Zvýšení základního data o náhodný počet dnů
                 return new User(
