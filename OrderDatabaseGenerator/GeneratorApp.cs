@@ -20,6 +20,9 @@ public class GeneratorApp
 
     public GeneratorApp()
     {
+        var baseDate = new DateTime(2018, 1, 1); // Nejstarší datum
+        var random = new Random(); // Pro generování náhodných rozestupů
+
         products = File.ReadAllLines("product.data")
             .AdvSelect()
             .Select(x =>
@@ -44,18 +47,23 @@ public class GeneratorApp
 
         var users = File.ReadAllLines("user.data")
             .AdvSelect()
-            .Select(x =>
-            new User(
-                Id: int.Parse(x[0]),
-                FirstName: x[1],
-                LastName: x[2],
-                Username: x[3],
-                Password: x[4],
-                Email: x[5],
-                Role: x[6],
-                Sex: x[7],
-                BranchId: x[8].Trim() != "null" ? int.Parse(x[8]) : null,
-                CreatedDate: RandomDate(new DateTime(2018, 1, 1), new DateTime(2025, 1, 1)))) // Oprava volání RandomDate
+            .Select((x, index) =>
+            {
+                // Náhodný rozestup v rozmezí 0 až 90 dnů
+                var randomDays = random.Next(1, 90);
+                baseDate = baseDate.AddDays(randomDays); // Zvýšení základního data o náhodný počet dnů
+                return new User(
+                    Id: int.Parse(x[0]),
+                    FirstName: x[1],
+                    LastName: x[2],
+                    Username: x[3],
+                    Password: x[4],
+                    Email: x[5],
+                    Role: x[6],
+                    Sex: x[7],
+                    BranchId: x[8].Trim() != "null" ? int.Parse(x[8]) : null,
+                    CreatedDate: baseDate.ToString("yyyy-MM-dd")); // Aktualizované datum
+            })
             .ToList();
 
         employees = users.Where(x => x.Role == "2").ToList();
@@ -78,10 +86,12 @@ public class GeneratorApp
             .ToList();
     }
 
+
     public void Run()
     {
         var orders = new List<Order>();
         var orderProducts = new List<OrderProduct>();
+        GenerateUsers(customers, employees);
         GenerateData(orders, orderProducts);
         MapToInsert(orders, orderProducts);
     }
@@ -97,6 +107,15 @@ public class GeneratorApp
         {
             Console.WriteLine($"({op.Id},{op.OrderId},{op.ProductId},{op.Quantity},{op.UnitPrice.ToString().Replace(',', '.')}),");
         }
+    }
+
+    private void GenerateUsers(List<User> customers, List<User> employees)
+    {
+        foreach (var user in customers.Concat(employees))
+        {
+            Console.WriteLine($"({user.Id},'{user.FirstName}','{user.LastName}','{user.Username}','{user.Password}','{user.Email}',{user.Role},'{user.Sex}',{(user.BranchId.HasValue ? user.BranchId.Value.ToString() : "NULL")},'{user.CreatedDate}'),");
+        }
+        Console.WriteLine();
     }
 
     private void GenerateData(List<Order> orders, List<OrderProduct> orderProducts)
