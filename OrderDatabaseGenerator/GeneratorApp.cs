@@ -44,6 +44,15 @@ public class GeneratorApp
             {
                 var randomDays = random.Next(1, 90);
                 baseDate = baseDate.AddDays(randomDays); // Zvýšení základního data o náhodný počet dnů
+
+                // Přidání náhodného času
+                var randomHours = random.Next(0, 24); // Náhodná hodina (0-23)
+                var randomMinutes = random.Next(0, 60); // Náhodná minuta (0-59)
+                var randomSeconds = random.Next(0, 60); // Náhodná sekunda (0-59)
+                var createdDateTime = baseDate.AddHours(randomHours)
+                                              .AddMinutes(randomMinutes)
+                                              .AddSeconds(randomSeconds);
+
                 return new User(
                     Id: int.Parse(x[0]),
                     FirstName: x[1],
@@ -54,7 +63,7 @@ public class GeneratorApp
                     Role: x[6],
                     Sex: x[7],
                     BranchId: x[8].Trim() != "null" ? int.Parse(x[8]) : null,
-                    CreatedDate: baseDate.ToString("yyyy-MM-dd")); // Aktualizované datum
+                    CreatedDate: createdDateTime.ToString("yyyy-MM-dd HH:mm:ss")); // Datum i čas
             })
             .ToList();
 
@@ -90,16 +99,27 @@ public class GeneratorApp
 
     private void MapToInsert(List<Order> orders, List<OrderProduct> orderProducts)
     {
-        foreach (var order in orders)
+        for (int i = 0; i < orders.Count; i++)
         {
-            Console.WriteLine($"({order.Id},{order.UserId},{order.EmployeeId},{order.BranchId},'{order.CreatedDate}',{order.TotalAmount.ToString().Replace(',', '.')},{order.TaxRate.ToString().Replace(',', '.')},{order.PaymentTypeId},{order.DeliveryTypeId}),");
+            var order = orders[i];
+            Console.Write($"({order.Id},{order.UserId},{order.EmployeeId},{order.BranchId},'{order.CreatedDate}',{order.TotalAmount.ToString().Replace(',', '.')},{order.TaxRate.ToString().Replace(',', '.')},{order.PaymentTypeId},{order.DeliveryTypeId})");
+            if (i < orders.Count - 1)
+                Console.WriteLine(",");
+            else
+                Console.WriteLine();
         }
         Console.WriteLine("OrderProduct");
-        foreach (var op in orderProducts)
+        for (int i = 0; i < orderProducts.Count; i++)
         {
-            Console.WriteLine($"({op.Id},{op.OrderId},{op.ProductId},{op.Quantity},{op.UnitPrice.ToString().Replace(',', '.')}),");
+            var op = orderProducts[i];
+            Console.Write($"({op.Id},{op.OrderId},{op.ProductId},{op.Quantity},{op.UnitPrice.ToString().Replace(',', '.')})");
+            if (i < orderProducts.Count - 1)
+                Console.WriteLine(",");
+            else
+                Console.WriteLine();
         }
     }
+
 
     private void GenerateUsers(List<User> customers, List<User> employees)
     {
@@ -133,13 +153,22 @@ public class GeneratorApp
                     ));
             }
 
+            // Náhodné hodiny, minuty a sekundy
+            var randomHours = r.Next(0, 24);
+            var randomMinutes = r.Next(0, 60);
+            var randomSeconds = r.Next(0, 60);
+
             var empl = employees[r.Next(0, employees.Count)];
             var item = new Order(
                 i,
                 customers[r.Next(0, customers.Count)].Id,
                 empl.Id,
                 empl.BranchId!.Value,
-                (currentOrderDate = currentOrderDate.AddDays(r.Next(0, 4))).ToString("yyyy-MM-dd"),
+                (currentOrderDate = currentOrderDate.AddDays(r.Next(0, 4)))
+                    .AddHours(randomHours)
+                    .AddMinutes(randomMinutes)
+                    .AddSeconds(randomSeconds)
+                    .ToString("yyyy-MM-dd HH:mm:ss"), // Přidání času k datu
                 total,
                 0.21m,
                 payments[r.Next(0, payments.Count)].Id,
@@ -149,6 +178,7 @@ public class GeneratorApp
             orders.Add(item);
         }
     }
+
 }
 
 public static class Extensions
