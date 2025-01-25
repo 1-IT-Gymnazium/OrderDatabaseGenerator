@@ -22,9 +22,17 @@ CREATE TABLE "User" (
     "Password" VARCHAR(255) NOT NULL,
     "Email" VARCHAR(255) NOT NULL,
     "RoleId" INT NOT NULL,
-    "Sex" VARCHAR(10) NULL,
-    "BranchId" INT,
+    "Sex" VARCHAR(10) NULL, -- M/F
     "CreatedDate" TIMESTAMP NOT NULL
+);
+
+CREATE TABLE "Employee" (
+    "Id" INT PRIMARY KEY, -- Matches the "User"."Id"
+    "Salary" DECIMAL(10, 2) NOT NULL,
+    "BranchId" INT NOT NULL,
+    "Position" VARCHAR(255) NULL,
+    FOREIGN KEY ("Id") REFERENCES "User"("Id"),
+    FOREIGN KEY ("BranchId") REFERENCES "Branch"("Id")
 );
 
 CREATE TABLE "Branch" (
@@ -46,7 +54,7 @@ CREATE TABLE "DeliveryType" (
 
 CREATE TABLE "Order" (
     "Id" SERIAL PRIMARY KEY,
-    "UserId" INT NOT NULL,
+    "CustomerId" INT NOT NULL,
     "EmployeeId" INT NOT NULL,
     "BranchId" INT NOT NULL,
     "CreatedDate" TIMESTAMP NOT NULL,
@@ -75,8 +83,11 @@ INSERT INTO "Branch" ("Id", "Name", "ManagerId", "CreatedDate") VALUES
 (2, 'New York', 5, '2020-01-01'),
 (3, 'Tokyo', 9, '2023-01-01');
 
-INSERT INTO "User" ("Id", "FirstName", "LastName", "Username", "Password", "Email", "RoleId", "Sex", "BranchId", "CreatedDate") VALUES
+INSERT INTO "User" ("Id", "FirstName", "LastName", "Username", "Password", "Email", "RoleId", "Sex", "CreatedDate") VALUES
 {{insert_users}};
+
+INSERT INTO "Employee" ("Id", "Salary", "BranchId", "Position")
+{{insert_employees}};
 
 INSERT INTO "PaymentType" ("Id", "Name") VALUES
 (1, 'Credit Card'),
@@ -106,7 +117,7 @@ INSERT INTO "Product" ("Id", "Name", "Rarity", "Season", "Price", "StockQuantity
 14,GuardianBox(S3),Epic,3,54.99,50
 15,MythicalBox(S3),Legendary,3,119.99,15
 16,InitiateBox(S4),Common,4,10.99,190
-17,Explorer’sCache(S4),Uncommon,4,15.99,170
+17,Explorerâ€™sCache(S4),Uncommon,4,15.99,170
 18,RangerBox(S4),Rare,4,22.99,130
 19,HeroicBox(S4),Epic,4,51.99,55
 20,PhoenixBox(S4),Legendary,4,105.99,18
@@ -117,14 +128,16 @@ INSERT INTO "Product" ("Id", "Name", "Rarity", "Season", "Price", "StockQuantity
 25,EtherealBox(S5),Legendary,5,121.99,12
 
 ALTER TABLE "User"
-ADD CONSTRAINT "fk_user_role" FOREIGN KEY ("RoleId") REFERENCES "Role"("Id"),
-ADD CONSTRAINT "fk_user_branch" FOREIGN KEY ("BranchId") REFERENCES "Branch"("Id");
+ADD CONSTRAINT "fk_user_role" FOREIGN KEY ("RoleId") REFERENCES "Role"("Id");
+
+ALTER TABLE "Employee"
+ADD CONSTRAINT "fk_employee_branch" FOREIGN KEY ("BranchId") REFERENCES "Branch"("Id");
 
 ALTER TABLE "Branch"
-ADD CONSTRAINT "fk_branch_manager" FOREIGN KEY ("ManagerId") REFERENCES "User"("Id");
+ADD CONSTRAINT "fk_branch_manager" FOREIGN KEY ("ManagerId") REFERENCES "Employee"("Id");
 
 ALTER TABLE "Order"
-ADD CONSTRAINT "fk_order_user" FOREIGN KEY ("UserId") REFERENCES "User"("Id"),
+ADD CONSTRAINT "fk_order_user" FOREIGN KEY ("CustomerId") REFERENCES "User"("Id"),
 ADD CONSTRAINT "fk_order_employee" FOREIGN KEY ("EmployeeId") REFERENCES "User"("Id"),
 ADD CONSTRAINT "fk_order_branch" FOREIGN KEY ("BranchId") REFERENCES "Branch"("Id"),
 ADD CONSTRAINT "fk_order_payment" FOREIGN KEY ("PaymentTypeId") REFERENCES "PaymentType"("Id"),
@@ -134,7 +147,7 @@ ALTER TABLE "OrderProduct"
 ADD CONSTRAINT "fk_orderproduct_order" FOREIGN KEY ("OrderId") REFERENCES "Order"("Id"),
 ADD CONSTRAINT "fk_orderproduct_product" FOREIGN KEY ("ProductId") REFERENCES "Product"("Id");
 
-INSERT INTO "Order" ("Id", "UserId", "EmployeeId", "BranchId", "CreatedDate", "TotalAmount", "TaxRate", "PaymentTypeId", "DeliveryTypeId") VALUES
+INSERT INTO "Order" ("Id", "CustomerId", "EmployeeId", "BranchId", "CreatedDate", "TotalAmount", "TaxRate", "PaymentTypeId", "DeliveryTypeId") VALUES
 {{insert_orders}};
 
 INSERT INTO "OrderProduct" ("Id", "OrderId", "ProductId", "Quantity", "UnitPrice") VALUES
