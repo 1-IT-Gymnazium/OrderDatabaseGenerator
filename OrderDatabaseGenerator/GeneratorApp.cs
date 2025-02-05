@@ -92,10 +92,12 @@ public class GeneratorApp
     {
         var orders = new List<Order>();
         var orderProducts = new List<OrderProduct>();
-        GenerateUsers(customers, employees);
+        GenerateCustomers(customers);
+        GenerateEmployees(employees);
         GenerateData(orders, orderProducts);
         MapToInsert(orders, orderProducts);
     }
+
 
     private void MapToInsert(List<Order> orders, List<OrderProduct> orderProducts)
     {
@@ -121,14 +123,26 @@ public class GeneratorApp
     }
 
 
-    private void GenerateUsers(List<User> customers, List<User> employees)
+    private void GenerateCustomers(List<User> customers)
     {
-        foreach (var user in customers.Concat(employees))
+        Console.WriteLine("Customers:");
+        foreach (var user in customers)
         {
-            Console.WriteLine($"({user.Id},'{user.FirstName}','{user.LastName}','{user.Username}','{user.Password}','{user.Email}',{user.Role},'{user.Sex}',{(user.BranchId.HasValue ? user.BranchId.Value.ToString() : "NULL")},'{user.CreatedDate}'),");
+            Console.WriteLine($"({user.Id},'{user.FirstName}','{user.LastName}','{user.Username}','{user.Password}','{user.Email}',{user.Role},'{user.Sex}',NULL,'{user.CreatedDate}'),");
         }
         Console.WriteLine();
     }
+
+    private void GenerateEmployees(List<User> employees)
+    {
+        Console.WriteLine("Employees:");
+        foreach (var user in employees)
+        {
+            Console.WriteLine($"({user.Id},'{user.FirstName}','{user.LastName}','{user.Username}','{user.Password}','{user.Email}',{user.Role},'{user.Sex}',{user.BranchId!.Value},'{user.CreatedDate}'),");
+        }
+        Console.WriteLine();
+    }
+
 
     private void GenerateData(List<Order> orders, List<OrderProduct> orderProducts)
     {
