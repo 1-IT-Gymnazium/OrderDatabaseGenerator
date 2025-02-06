@@ -17,7 +17,6 @@ public record User(
     string Password,
     string Role,
     string? Sex, // "Male" or "Female"
-    int? BranchId,
     string CreatedDate
 );
 

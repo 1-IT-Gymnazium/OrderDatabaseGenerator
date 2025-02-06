@@ -1,5 +1,6 @@
 using System;
 namespace OrderDatabaseGenerator;
+
 public class GeneratorApp
 {
     private readonly List<Product> products;
@@ -13,8 +14,8 @@ public class GeneratorApp
 
     public GeneratorApp()
     {
-        var baseDate = new DateTime(2018, 1, 1); // Nejstarší datum
-        var random = new Random(); // Pro generování náhodných rozestupů
+        var baseDate = new DateTime(2018, 1, 1);
+        var random = new Random();
 
         products = File.ReadAllLines("product.data")
             .AdvSelect()
@@ -43,15 +44,11 @@ public class GeneratorApp
             .Select((x, index) =>
             {
                 var randomDays = random.Next(1, 90);
-                baseDate = baseDate.AddDays(randomDays); // Zvýšení základního data o náhodný počet dnů
-
-                // Přidání náhodného času
-                var randomHours = random.Next(0, 24); // Náhodná hodina (0-23)
-                var randomMinutes = random.Next(0, 60); // Náhodná minuta (0-59)
-                var randomSeconds = random.Next(0, 60); // Náhodná sekunda (0-59)
-                var createdDateTime = baseDate.AddHours(randomHours)
-                                              .AddMinutes(randomMinutes)
-                                              .AddSeconds(randomSeconds);
+                baseDate = baseDate.AddDays(randomDays);
+                var createdDateTime = baseDate
+                                      .AddHours(random.Next(0, 24))
+                                      .AddMinutes(random.Next(0, 60))
+                                      .AddSeconds(random.Next(0, 60));
 
                 return new User(
                     Id: int.Parse(x[0]),
@@ -62,8 +59,7 @@ public class GeneratorApp
                     Email: x[5],
                     Role: x[6],
                     Sex: x[7],
-                    BranchId: x[8].Trim() != "null" ? int.Parse(x[8]) : null,
-                    CreatedDate: createdDateTime.ToString("yyyy-MM-dd HH:mm:ss")); // Datum i čas
+                    CreatedDate: createdDateTime.ToString("yyyy-MM-dd HH:mm:ss"));
             })
             .ToList();
 
@@ -94,8 +90,7 @@ public class GeneratorApp
         GenerateUsers(customers, employees);
         GenerateData(orders, orderProducts);
         MapToInsert(orders, orderProducts);
-        GenerateEmployees(); // Added method call for generating employee inserts
-
+        GenerateEmployees();
     }
 
     private void MapToInsert(List<Order> orders, List<OrderProduct> orderProducts)
@@ -103,7 +98,7 @@ public class GeneratorApp
         for (int i = 0; i < orders.Count; i++)
         {
             var order = orders[i];
-            Console.Write($"({order.Id},{order.UserId},{order.EmployeeId},{order.BranchId},'{order.CreatedDate}',{order.TotalAmount.ToString().Replace(',', '.')},{order.TaxRate.ToString().Replace(',', '.')},{order.PaymentTypeId},{order.DeliveryTypeId})");
+            Console.Write($"({order.Id},{order.UserId},{order.EmployeeId},'{order.CreatedDate}',{order.TotalAmount.ToString().Replace(',', '.')},{order.TaxRate.ToString().Replace(',', '.')},{order.PaymentTypeId},{order.DeliveryTypeId})");
             if (i < orders.Count - 1)
                 Console.WriteLine(",");
             else
@@ -120,11 +115,12 @@ public class GeneratorApp
                 Console.WriteLine();
         }
     }
+
     private void GenerateUsers(List<User> customers, List<User> employees)
     {
         foreach (var user in customers.Concat(employees))
         {
-            Console.WriteLine($"({user.Id},'{user.FirstName}','{user.LastName}','{user.Username}','{user.Password}','{user.Email}',{user.Role},'{user.Sex}',{(user.BranchId.HasValue ? user.BranchId.Value.ToString() : "NULL")},'{user.CreatedDate}'),");
+            Console.WriteLine($"({user.Id},'{user.FirstName}','{user.LastName}','{user.Username}','{user.Password}','{user.Email}',{user.Role},'{user.Sex}','{user.CreatedDate}'),");
         }
         Console.WriteLine();
     }
@@ -152,7 +148,6 @@ public class GeneratorApp
                     ));
             }
 
-            // Náhodné hodiny, minuty a sekundy
             var randomHours = r.Next(0, 24);
             var randomMinutes = r.Next(0, 60);
             var randomSeconds = r.Next(0, 60);
@@ -162,21 +157,23 @@ public class GeneratorApp
                 i,
                 customers[r.Next(0, customers.Count)].Id,
                 empl.Id,
-                empl.BranchId!.Value,
+                0, // Defaultní hodnota pro BranchId bcs uz tam neni
                 (currentOrderDate = currentOrderDate.AddDays(r.Next(0, 4)))
                     .AddHours(randomHours)
                     .AddMinutes(randomMinutes)
                     .AddSeconds(randomSeconds)
-                    .ToString("yyyy-MM-dd HH:mm:ss"), // Přidání času k datu
+                    .ToString("yyyy-MM-dd HH:mm:ss"),
                 total,
                 0.21m,
                 payments[r.Next(0, payments.Count)].Id,
-                deliveries[r.Next(0, deliveries.Count)].Id
-                );
+                deliveries[r.Next(0, deliveries.Count)].Id // Přidání chybějícího DeliveryTypeId
+            );
+
 
             orders.Add(item);
         }
     }
+
     private void GenerateEmployees()
     {
         var employeeData = File.ReadAllLines("employees.data")
@@ -194,7 +191,7 @@ public class GeneratorApp
             var data = employeeData.FirstOrDefault(e => e.Id == emp.Id);
             if (data != null)
             {
-                Console.WriteLine($"({data.Id},{data.Salary},{emp.BranchId},'{data.Position}'),");
+                Console.WriteLine($"({data.Id},{data.Salary},'{data.Position}'),");
             }
         }
         Console.WriteLine();

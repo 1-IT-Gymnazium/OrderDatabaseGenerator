@@ -26,6 +26,13 @@ CREATE TABLE "User" (
     "CreatedDate" TIMESTAMP NOT NULL
 );
 
+CREATE TABLE "Branch" (
+    "Id" SERIAL PRIMARY KEY,
+    "Name" VARCHAR(255) NOT NULL,
+    "ManagerId" INT NOT NULL,
+    "CreatedDate" TIMESTAMP NOT NULL
+);
+
 CREATE TABLE "Employee" (
     "Id" INT PRIMARY KEY, -- Matches the "User"."Id"
     "Salary" DECIMAL(10, 2) NOT NULL,
@@ -33,13 +40,6 @@ CREATE TABLE "Employee" (
     "Position" VARCHAR(255) NULL,
     FOREIGN KEY ("Id") REFERENCES "User"("Id"),
     FOREIGN KEY ("BranchId") REFERENCES "Branch"("Id")
-);
-
-CREATE TABLE "Branch" (
-    "Id" SERIAL PRIMARY KEY,
-    "Name" VARCHAR(255) NOT NULL,
-    "ManagerId" INT NOT NULL,
-    "CreatedDate" TIMESTAMP NOT NULL
 );
 
 CREATE TABLE "PaymentType" (
@@ -86,7 +86,7 @@ INSERT INTO "Branch" ("Id", "Name", "ManagerId", "CreatedDate") VALUES
 INSERT INTO "User" ("Id", "FirstName", "LastName", "Username", "Password", "Email", "RoleId", "Sex", "CreatedDate") VALUES
 {{insert_users}};
 
-INSERT INTO "Employee" ("Id", "Salary", "BranchId", "Position")
+INSERT INTO "Employee" ("Id", "Salary", "BranchId", "Position") VALUES
 {{insert_employees}};
 
 INSERT INTO "PaymentType" ("Id", "Name") VALUES
