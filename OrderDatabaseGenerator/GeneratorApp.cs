@@ -87,17 +87,16 @@ public class GeneratorApp
             .ToList();
     }
 
-
     public void Run()
     {
         var orders = new List<Order>();
         var orderProducts = new List<OrderProduct>();
-        GenerateCustomers(customers);
-        GenerateEmployees(employees);
+        GenerateUsers(customers, employees);
         GenerateData(orders, orderProducts);
         MapToInsert(orders, orderProducts);
-    }
+        GenerateEmployees(); // Added method call for generating employee inserts
 
+    }
 
     private void MapToInsert(List<Order> orders, List<OrderProduct> orderProducts)
     {
@@ -121,28 +120,14 @@ public class GeneratorApp
                 Console.WriteLine();
         }
     }
-
-
-    private void GenerateCustomers(List<User> customers)
+    private void GenerateUsers(List<User> customers, List<User> employees)
     {
-        Console.WriteLine("Customers:");
-        foreach (var user in customers)
+        foreach (var user in customers.Concat(employees))
         {
-            Console.WriteLine($"({user.Id},'{user.FirstName}','{user.LastName}','{user.Username}','{user.Password}','{user.Email}',{user.Role},'{user.Sex}',NULL,'{user.CreatedDate}'),");
+            Console.WriteLine($"({user.Id},'{user.FirstName}','{user.LastName}','{user.Username}','{user.Password}','{user.Email}',{user.Role},'{user.Sex}',{(user.BranchId.HasValue ? user.BranchId.Value.ToString() : "NULL")},'{user.CreatedDate}'),");
         }
         Console.WriteLine();
     }
-
-    private void GenerateEmployees(List<User> employees)
-    {
-        Console.WriteLine("Employees:");
-        foreach (var user in employees)
-        {
-            Console.WriteLine($"({user.Id},'{user.FirstName}','{user.LastName}','{user.Username}','{user.Password}','{user.Email}',{user.Role},'{user.Sex}',{user.BranchId!.Value},'{user.CreatedDate}'),");
-        }
-        Console.WriteLine();
-    }
-
 
     private void GenerateData(List<Order> orders, List<OrderProduct> orderProducts)
     {
@@ -192,7 +177,28 @@ public class GeneratorApp
             orders.Add(item);
         }
     }
-
+    private void GenerateEmployees()
+    {
+        var employeeData = File.ReadAllLines("employees.data")
+            .Select(x => x.Split(','))
+            .Select(x => new
+            {
+                Id = int.Parse(x[0]),
+                Salary = decimal.Parse(x[1]),
+                Position = x[2]
+            })
+            .ToList();
+        Console.WriteLine("Employees");
+        foreach (var emp in employees)
+        {
+            var data = employeeData.FirstOrDefault(e => e.Id == emp.Id);
+            if (data != null)
+            {
+                Console.WriteLine($"({data.Id},{data.Salary},{emp.BranchId},'{data.Position}'),");
+            }
+        }
+        Console.WriteLine();
+    }
 }
 
 public static class Extensions
