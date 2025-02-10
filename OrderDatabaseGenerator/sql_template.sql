@@ -26,6 +26,15 @@ CREATE TABLE "User" (
     "CreatedDate" TIMESTAMP NOT NULL
 );
 
+CREATE TABLE "Employee" (
+    "Id" INT PRIMARY KEY, -- Matches the "User"."Id"
+    "Salary" DECIMAL(10, 2) NOT NULL,
+    "BranchId" INT NOT NULL,
+    "Position" VARCHAR(255) NULL,
+    FOREIGN KEY ("Id") REFERENCES "User"("Id"),
+    FOREIGN KEY ("BranchId") REFERENCES "Branch"("Id")
+);
+
 CREATE TABLE "Branch" (
     "Id" SERIAL PRIMARY KEY,
     "Name" VARCHAR(255) NOT NULL,
@@ -117,7 +126,7 @@ INSERT INTO "Product" ("Id", "Name", "Rarity", "Season", "Price", "StockQuantity
 (14, 'Guardian Box (S3)', 'Epic', 3, 54.99, 50),
 (15, 'Mythical Box (S3)', 'Legendary', 3, 119.99, 15),
 (16, 'Initiate Box (S4)', 'Common', 4, 10.99, 190),
-(17, 'Explorer’s Cache (S4)', 'Uncommon', 4, 15.99, 170),
+(17, 'Explorers Cache (S4)', 'Uncommon', 4, 15.99, 170),
 (18, 'Ranger Box (S4)', 'Rare', 4, 22.99, 130),
 (19, 'Heroic Box (S4)', 'Epic', 4, 51.99, 55),
 (20, 'Phoenix Box (S4)', 'Legendary', 4, 105.99, 18),
