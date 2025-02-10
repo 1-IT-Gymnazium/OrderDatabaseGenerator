@@ -98,7 +98,7 @@ public class GeneratorApp
         for (int i = 0; i < orders.Count; i++)
         {
             var order = orders[i];
-            Console.Write($"({order.Id},{order.UserId},{order.EmployeeId},'{order.CreatedDate}',{order.TotalAmount.ToString().Replace(',', '.')},{order.TaxRate.ToString().Replace(',', '.')},{order.PaymentTypeId},{order.DeliveryTypeId})");
+            Console.Write($"({order.Id},{order.UserId},{order.EmployeeId},{order.BranchId},'{order.CreatedDate}',{order.TotalAmount.ToString().Replace(',', '.')},{order.TaxRate.ToString().Replace(',', '.')},{order.PaymentTypeId},{order.DeliveryTypeId})");
             if (i < orders.Count - 1)
                 Console.WriteLine(",");
             else
@@ -115,6 +115,7 @@ public class GeneratorApp
                 Console.WriteLine();
         }
     }
+
 
     private void GenerateUsers(List<User> customers, List<User> employees)
     {
@@ -153,11 +154,13 @@ public class GeneratorApp
             var randomSeconds = r.Next(0, 60);
 
             var empl = employees[r.Next(0, employees.Count)];
+            int branchId = branches[(empl.Id - 1) % branches.Count].Id; // Přiřazení BranchId na základě zaměstnance
+
             var item = new Order(
                 i,
                 customers[r.Next(0, customers.Count)].Id,
                 empl.Id,
-                0, // Defaultní hodnota pro BranchId bcs uz tam neni
+                branchId, // Opravené přiřazení BranchId
                 (currentOrderDate = currentOrderDate.AddDays(r.Next(0, 4)))
                     .AddHours(randomHours)
                     .AddMinutes(randomMinutes)
@@ -166,8 +169,9 @@ public class GeneratorApp
                 total,
                 0.21m,
                 payments[r.Next(0, payments.Count)].Id,
-                deliveries[r.Next(0, deliveries.Count)].Id // Přidání chybějícího DeliveryTypeId
+                deliveries[r.Next(0, deliveries.Count)].Id
             );
+
 
 
             orders.Add(item);
@@ -185,17 +189,24 @@ public class GeneratorApp
                 Position = x[2]
             })
             .ToList();
+
+        int branchCount = branches.Count;
+        int employeesPerBranch = (int)Math.Ceiling((double)employees.Count / branchCount);
+
         Console.WriteLine("Employees");
-        foreach (var emp in employees)
+        for (int i = 0; i < employees.Count; i++)
         {
+            var emp = employees[i];
             var data = employeeData.FirstOrDefault(e => e.Id == emp.Id);
             if (data != null)
             {
-                Console.WriteLine($"({data.Id},{data.Salary},'{data.Position}'),");
+                int branchId = branches[(i / employeesPerBranch) % branchCount].Id; // Postupné přiřazování poboček
+                Console.WriteLine($"({data.Id},{data.Salary},{branchId},'{data.Position}'),");
             }
         }
         Console.WriteLine();
     }
+
 }
 
 public static class Extensions
