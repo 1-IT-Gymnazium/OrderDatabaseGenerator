@@ -23,6 +23,9 @@
     <None Update="product.data">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="sql_template.sql">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="user.data">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
