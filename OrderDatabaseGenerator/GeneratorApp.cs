@@ -1,4 +1,8 @@
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+
 namespace OrderDatabaseGenerator;
 
 public class GeneratorApp
@@ -87,54 +91,31 @@ public class GeneratorApp
     {
         var orders = new List<Order>();
         var orderProducts = new List<OrderProduct>();
-        GenerateUsers(customers, employees);
-        GenerateData(orders, orderProducts);
-        MapToInsert(orders, orderProducts);
-        GenerateEmployees();
+
+        var usersSql = GenerateUsers(customers, employees);
+        var employeesSql = GenerateEmployees();
+        var (ordersSql, orderProductsSql) = GenerateData(orders, orderProducts);
+
+        ReplaceAndSaveSqlTemplate(usersSql, employeesSql, ordersSql, orderProductsSql);
     }
 
-    private void MapToInsert(List<Order> orders, List<OrderProduct> orderProducts)
+    private string GenerateUsers(List<User> customers, List<User> employees)
     {
-        for (int i = 0; i < orders.Count; i++)
-        {
-            var order = orders[i];
-            Console.Write($"({order.Id},{order.UserId},{order.EmployeeId},{order.BranchId},'{order.CreatedDate}',{order.TotalAmount.ToString().Replace(',', '.')},{order.TaxRate.ToString().Replace(',', '.')},{order.PaymentTypeId},{order.DeliveryTypeId})");
-            if (i < orders.Count - 1)
-                Console.WriteLine(",");
-            else
-                Console.WriteLine();
-        }
-        Console.WriteLine("OrderProduct");
-        for (int i = 0; i < orderProducts.Count; i++)
-        {
-            var op = orderProducts[i];
-            Console.Write($"({op.Id},{op.OrderId},{op.ProductId},{op.Quantity},{op.UnitPrice.ToString().Replace(',', '.')})");
-            if (i < orderProducts.Count - 1)
-                Console.WriteLine(",");
-            else
-                Console.WriteLine();
-        }
+        return string.Join(",\n", customers.Concat(employees)
+            .Select(user => $"({user.Id},'{user.FirstName}','{user.LastName}','{user.Username}','{user.Password}','{user.Email}',{user.Role},'{user.Sex}','{user.CreatedDate}')"));
     }
 
-
-    private void GenerateUsers(List<User> customers, List<User> employees)
-    {
-        foreach (var user in customers.Concat(employees))
-        {
-            Console.WriteLine($"({user.Id},'{user.FirstName}','{user.LastName}','{user.Username}','{user.Password}','{user.Email}',{user.Role},'{user.Sex}','{user.CreatedDate}'),");
-        }
-        Console.WriteLine();
-    }
-
-    private void GenerateData(List<Order> orders, List<OrderProduct> orderProducts)
+    private (string, string) GenerateData(List<Order> orders, List<OrderProduct> orderProducts)
     {
         var orderProductCounter = 0;
         var currentOrderDate = new DateTime(2024, 1, 1);
         var r = new Random(123456);
+
         for (int i = 1; i < 134; i++)
         {
             var excepts = new List<Product>();
             var total = 0m;
+
             for (int j = 0; j < r.Next(1, 9); j++)
             {
                 var tmpProducts = products.Except(excepts).ToList();
@@ -146,7 +127,7 @@ public class GeneratorApp
                     ProductId: currentProduct.Id,
                     Quantity: quantity,
                     UnitPrice: total = quantity * currentProduct.Price
-                    ));
+                ));
             }
 
             var randomHours = r.Next(0, 24);
@@ -154,13 +135,13 @@ public class GeneratorApp
             var randomSeconds = r.Next(0, 60);
 
             var empl = employees[r.Next(0, employees.Count)];
-            int branchId = branches[(empl.Id - 1) % branches.Count].Id; // Přiřazení BranchId na základě zaměstnance
+            int branchId = branches[(empl.Id - 1) % branches.Count].Id;
 
-            var item = new Order(
+            orders.Add(new Order(
                 i,
                 customers[r.Next(0, customers.Count)].Id,
                 empl.Id,
-                branchId, // Opravené přiřazení BranchId
+                branchId,
                 (currentOrderDate = currentOrderDate.AddDays(r.Next(0, 4)))
                     .AddHours(randomHours)
                     .AddMinutes(randomMinutes)
@@ -170,15 +151,16 @@ public class GeneratorApp
                 0.21m,
                 payments[r.Next(0, payments.Count)].Id,
                 deliveries[r.Next(0, deliveries.Count)].Id
-            );
-
-
-
-            orders.Add(item);
+            ));
         }
+
+        var ordersSql = string.Join(",\n", orders.Select(o => $"({o.Id},{o.UserId},{o.EmployeeId},{o.BranchId},'{o.CreatedDate}',{o.TotalAmount},{o.TaxRate},{o.PaymentTypeId},{o.DeliveryTypeId})"));
+        var orderProductsSql = string.Join(",\n", orderProducts.Select(op => $"({op.Id},{op.OrderId},{op.ProductId},{op.Quantity},{op.UnitPrice})"));
+
+        return (ordersSql, orderProductsSql);
     }
 
-    private void GenerateEmployees()
+    private string GenerateEmployees()
     {
         var employeeData = File.ReadAllLines("employees.data")
             .Select(x => x.Split(','))
@@ -193,25 +175,33 @@ public class GeneratorApp
         int branchCount = branches.Count;
         int employeesPerBranch = (int)Math.Ceiling((double)employees.Count / branchCount);
 
-        Console.WriteLine("Employees");
-        for (int i = 0; i < employees.Count; i++)
+        return string.Join(",\n", employees.Select((emp, i) =>
         {
-            var emp = employees[i];
             var data = employeeData.FirstOrDefault(e => e.Id == emp.Id);
             if (data != null)
             {
-                int branchId = branches[(i / employeesPerBranch) % branchCount].Id; // Postupné přiřazování poboček
-                Console.WriteLine($"({data.Id},{data.Salary},{branchId},'{data.Position}'),");
+                int branchId = branches[(i / employeesPerBranch) % branchCount].Id;
+                return $"({data.Id},{data.Salary},{branchId},'{data.Position}')";
             }
-        }
-        Console.WriteLine();
+            return null;
+        }).Where(x => x != null));
     }
 
+    private void ReplaceAndSaveSqlTemplate(string usersSql, string employeesSql, string ordersSql, string orderProductsSql)
+    {
+        string sqlTemplate = File.ReadAllText("sql_template.sql");
+        sqlTemplate = sqlTemplate.Replace("{{insert_users}}", usersSql)
+                                 .Replace("{{insert_employees}}", employeesSql)
+                                 .Replace("{{insert_orders}}", ordersSql)
+                                 .Replace("{{insert_order_products}}", orderProductsSql);
+
+        File.WriteAllText("db_Orders_version.sql", sqlTemplate);
+        Console.WriteLine("Ulozeno do db_Orders_version.sql");
+    }
 }
 
 public static class Extensions
 {
     public static IEnumerable<string[]> AdvSelect(this string[] query)
-        => query
-        .Select(x => x.TrimStart('(').TrimEnd([')', ',']).Split(','));
+        => query.Select(x => x.TrimStart('(').TrimEnd([')', ',']).Split(','));
 }
