@@ -1,4 +1,3 @@
-
 -- Create tables without foreign key constraints
 CREATE TABLE "Product" (
     "Id" SERIAL PRIMARY KEY,
