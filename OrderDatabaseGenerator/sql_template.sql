@@ -25,19 +25,10 @@ CREATE TABLE "User" (
     "CreatedDate" TIMESTAMP NOT NULL
 );
 
-CREATE TABLE "Employee" (
-    "Id" INT PRIMARY KEY, -- Matches the "User"."Id"
-    "Salary" DECIMAL(10, 2) NOT NULL,
-    "BranchId" INT NOT NULL,
-    "Position" VARCHAR(255) NULL,
-    FOREIGN KEY ("Id") REFERENCES "User"("Id"),
-    FOREIGN KEY ("BranchId") REFERENCES "Branch"("Id")
-);
-
 CREATE TABLE "Branch" (
     "Id" SERIAL PRIMARY KEY,
     "Name" VARCHAR(255) NOT NULL,
-    "ManagerId" INT NOT NULL,
+    "ManagerId" INT NULL, -- NULL initially, FK will be added later
     "CreatedDate" TIMESTAMP NOT NULL
 );
 
@@ -45,9 +36,7 @@ CREATE TABLE "Employee" (
     "Id" INT PRIMARY KEY, -- Matches the "User"."Id"
     "Salary" DECIMAL(10, 2) NOT NULL,
     "BranchId" INT NOT NULL,
-    "Position" VARCHAR(255) NULL,
-    FOREIGN KEY ("Id") REFERENCES "User"("Id"),
-    FOREIGN KEY ("BranchId") REFERENCES "Branch"("Id")
+    "Position" VARCHAR(255) NULL
 );
 
 CREATE TABLE "PaymentType" (
@@ -87,9 +76,9 @@ INSERT INTO "Role" ("Id", "Name") VALUES
 (3, 'Manager');
 
 INSERT INTO "Branch" ("Id", "Name", "ManagerId", "CreatedDate") VALUES
-(1, 'Prague', 1, '2018.1.1'),
-(2, 'New York', 5, '2020-01-01'),
-(3, 'Tokyo', 9, '2023-01-01');
+(1, 'Prague', NULL, '2018-01-01'),
+(2, 'New York', NULL, '2020-01-01'),
+(3, 'Tokyo', NULL, '2023-01-01');
 
 INSERT INTO "User" ("Id", "FirstName", "LastName", "Username", "Password", "Email", "RoleId", "Sex", "CreatedDate") VALUES
 {{insert_users}};
@@ -139,6 +128,7 @@ ALTER TABLE "User"
 ADD CONSTRAINT "fk_user_role" FOREIGN KEY ("RoleId") REFERENCES "Role"("Id");
 
 ALTER TABLE "Employee"
+ADD CONSTRAINT "fk_employee_user" FOREIGN KEY ("Id") REFERENCES "User"("Id"),
 ADD CONSTRAINT "fk_employee_branch" FOREIGN KEY ("BranchId") REFERENCES "Branch"("Id");
 
 ALTER TABLE "Branch"
